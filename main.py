@@ -10,7 +10,7 @@ import time
 import torch.nn as nn
 import json
 from collections import OrderedDict
-import cv2
+#import cv2
 import numpy as np 
 
 
@@ -139,7 +139,7 @@ def eval_once_on_trainig(dataloader, model, checkpoint_dir):
             if save_batch:
                 anom_maps   =   torch.nn.functional.sigmoid(ret['anomaly_map']).detach().cpu().numpy()
             for index_map, anom_map in enumerate(anom_maps):
-                cv2.imwrite(f'anom_maps/{index_map}.png',(anom_map[0,:,:]*255).astype(np.uint8))
+                #cv2.imwrite(f'anom_maps/{index_map}.png',(anom_map[0,:,:]*255).astype(np.uint8))
                 save_batch  =   False
         avg_time += time.time() - t0
         outputs = ret["anomaly_map"].cpu().detach()
