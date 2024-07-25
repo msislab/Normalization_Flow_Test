@@ -23,3 +23,6 @@ TestResults.xml
 
 data/
 __pycache__/
+anom_maps/
+results/
+result.txt

@@ -27,7 +27,7 @@
             "justMyCode": true,
             "args": [
                 "--data",
-                "results/trained_weights/dataset_ket_final/mold/Cast_reference",
+                "data/mold/Cast_reference",
                 "--category",
                 "Cast_reference",
                 "--eval",

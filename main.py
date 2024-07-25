@@ -50,9 +50,13 @@ def build_train_data_loader(args):
         train_dataset,
         batch_size=const.BATCH_SIZE,
         shuffle=True,
-        num_workers=4,
+        #num_workers=4,
         drop_last=True,
     )
+
+def norm_inv(image):
+    image = (image+ (np.array([0.485, 0.456, 0.406]) / np.array([0.229, 0.224, 0.225]))) * np.array([0.229, 0.224, 0.225])
+    return (image*255).astype(np.uint8)
 
 def build_test_data_loader(args):
     test_dataset = dataset.MoldDataset(
@@ -66,7 +70,7 @@ def build_test_data_loader(args):
         test_dataset,
         batch_size=const.BATCH_SIZE,
         shuffle=False,
-        num_workers=4,
+        #num_workers=4,
         drop_last=False,
     )
 
@@ -102,6 +106,7 @@ def eval_once(dataloader, model):
             _ = model(dummy_input)
 
     avg_time = 0
+    save_batch  =   True
     for i, (data, targets) in enumerate(dataloader):
         data, targets = data.to(dev), targets.to(dev)
         t0 = time.time()
@@ -109,6 +114,18 @@ def eval_once(dataloader, model):
             ret = model(data)
         avg_time += time.time() - t0
         outputs = ret["anomaly_map"].cpu().detach()
+        
+        if save_batch:
+            anom_maps   =   torch.nn.functional.sigmoid(outputs).numpy()
+            for index_map, anom_map in enumerate(anom_maps):
+                img_orig    =   norm_inv(data[index_map,:,:,:].permute(1,2,0).detach().cpu().numpy())
+                target_img  =   ((targets[index_map,:,:,:].permute(1,2,0).detach().cpu().numpy()[:,:,0])*255).astype(np.uint8)
+                anom_mask   =   (anom_map[0,:,:]*255).astype(np.uint8)
+                stack_masks =   cv2.cvtColor(np.hstack((target_img, anom_mask )),cv2.COLOR_GRAY2BGR)
+                stack_in_mas =  np.hstack((img_orig,stack_masks))
+                cv2.imwrite(f'anom_maps/test_{index_map}.png',stack_in_mas)
+                #save_batch  =   False
+                
         save = True
         if i == 1 and save:
             save_output(data, targets, outputs, 4)
@@ -139,7 +156,7 @@ def eval_once_on_trainig(dataloader, model, checkpoint_dir):
             if save_batch:
                 anom_maps   =   torch.nn.functional.sigmoid(ret['anomaly_map']).detach().cpu().numpy()
             for index_map, anom_map in enumerate(anom_maps):
-                #cv2.imwrite(f'anom_maps/{index_map}.png',(anom_map[0,:,:]*255).astype(np.uint8))
+                cv2.imwrite(f'anom_maps/{index_map}.png',(anom_map[0,:,:]*255).astype(np.uint8))
                 save_batch  =   False
         avg_time += time.time() - t0
         outputs = ret["anomaly_map"].cpu().detach()
@@ -240,12 +257,7 @@ def evaluate(args):
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = nn.DataParallel(model.to(dev))
     checkpoint = torch.load(args.checkpoint)
-    new_checkpoint =  OrderedDict()
-    for k, v in checkpoint.items():
-        name = k[7:]
-        new_checkpoint[name] = v
-    print("Loaded checkpoint from {}".format(args.checkpoint))
-    model.load_state_dict(new_checkpoint)
+    model.load_state_dict(checkpoint['model_state_dict'])
     test_dataloader = build_test_data_loader(args)
     print("Test data num: {}".format(test_dataloader.__len__()*32))
     eval_once(test_dataloader, model)
