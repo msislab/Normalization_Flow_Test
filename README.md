@@ -2,10 +2,13 @@
 
 # Create a Docker Environment  
 
-1. **`docker build -t normalization_flow .`**
+```bash 
+docker build -t normalization_flow .
+```
 
-2. **docker run -it --name normalization_flow_run -deatch normalization_flow**
-
+```bash
+docker run --name normalization_flow_run --gpus all -it --rm -v $(pwd):/Normalization_Flow_Test normalization_flow**
+```
 # Installation Requirements
 
 Before you start, we need to install some requirements folder by running the following:
