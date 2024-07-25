@@ -4,3 +4,4 @@ Pillow
 timm
 pytorch-ignite
 scikit-learn
+opencv-python

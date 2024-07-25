@@ -1,18 +1,27 @@
-ARG BASE_IMAGE=python:3.11
-FROM $BASE_IMAGE
+FROM nvidia/cuda:11.4.0-base-ubuntu20.04
 
-# ARGUMENTS
-LABEL maintainer=rizwan
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
-# add pip packages when necessary
-RUN pip install --upgrade pip
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt --no-cache-dir
-RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118	
-RUN pip install opencv-python
-WORKDIR /
-COPY ./ /Normalization_Flow_Test
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        git \
+        python3-pip \
+        python3-dev \
+        python3-opencv \
+        libglib2.0-0
+# Install any python packages you need
+COPY requirements.txt requirements.txt
+
+RUN python3 -m pip install -r requirements.txt
+
+# Upgrade pip
+RUN python3 -m pip install --upgrade pip
+
+# Install PyTorch and torchvision
+RUN pip3 install torch torchvision torchaudio -f https://download.pytorch.org/whl/cu111/torch_stable.html
+
+WORKDIR /Normalization_Flow_Test
+#COPY ./ /Normalization_Flow_Test
 ARG USER_NAME=normalization_flow 
